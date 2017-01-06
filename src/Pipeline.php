@@ -9,7 +9,7 @@ use Symfony\Component\DomCrawler\Crawler;
  * @link      https://www.github.com/janhuang
  * @link      http://www.fast-d.cn/
  */
-abstract class Pipe
+abstract class Pipeline
 {
     public $item;
 
@@ -25,5 +25,5 @@ abstract class Pipe
      * @param ResponseInterface $response
      * @return mixed
      */
-    abstract public function processItem(Crawler $crawler, ResponseInterface $response = null);
+    abstract public function processItem(Crawler $crawler = null, ResponseInterface $response = null);
 }

@@ -17,16 +17,7 @@ class DemoSpiderWeb extends SpiderWeb
 
     public function process(Crawler $crawler, ResponseInterface $response)
     {
-//        $response->getBody()->rewind();
-//        print_r($response->getBody()->getContents());
-
-        $this->pipe(DemoPipe::class, $crawler, $response);
-
-//        $this->emit(new DemoSpiderWeb('GET', 'http://api.k780.com:88/?app=ip.get&ip=8.8.8.8&appkey=10003&sign=b59bc3ef6191eb9f747dd4e83c99f2a4&format=json'));
-//        $this->emit(new DemoSpiderWeb('GET', 'http://api.k780.com:88/?app=ip.get&ip=8.8.8.8&appkey=10003&sign=b59bc3ef6191eb9f747dd4e83c99f2a4&format=json'));
-//        $this->emit(new DemoSpiderWeb('GET', 'http://api.k780.com:88/?app=ip.get&ip=8.8.8.8&appkey=10003&sign=b59bc3ef6191eb9f747dd4e83c99f2a4&format=json'));
-//        $this->emit(new DemoSpiderWeb('GET', 'http://api.k780.com:88/?app=ip.get&ip=8.8.8.8&appkey=10003&sign=b59bc3ef6191eb9f747dd4e83c99f2a4&format=json'));
-//        $this->emit(new DemoSpiderWeb('GET', 'http://api.k780.com:88/?app=ip.get&ip=8.8.8.8&appkey=10003&sign=b59bc3ef6191eb9f747dd4e83c99f2a4&format=json'));
+        $this->pipe(DemoPipe::class, '');
     }
 
     function error(RequestException $requestException)

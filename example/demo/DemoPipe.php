@@ -9,16 +9,15 @@ use Symfony\Component\DomCrawler\Crawler;
  * @link      https://www.github.com/janhuang
  * @link      http://www.fast-d.cn/
  */
-class DemoPipe extends Pipe
+class DemoPipe extends Pipeline
 {
     /**
      * @param Crawler $crawler
      * @param ResponseInterface $response
      * @return mixed
      */
-    public function processItem(Crawler $crawler, ResponseInterface $response = null)
+    public function processItem(Crawler $crawler = null, ResponseInterface $response = null)
     {
-        $response->getBody()->rewind();
-        echo $response->getBody();
+        
     }
 }

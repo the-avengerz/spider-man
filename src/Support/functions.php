@@ -24,6 +24,8 @@ function emit (Client $client, SpiderWeb $spiderWeb) {
         ->requestAsync($spiderWeb->method, (string)$spiderWeb->uri)
         ->then(function (ResponseInterface $response) use ($spiderWeb) {
             $crawler = createCrawler($response);
+            $spiderWeb->node = $crawler;
+            $spiderWeb->response = $response;
             return call_user_func_array([$spiderWeb, 'process'], [$crawler, $response]);
         }, function (RequestException $requestException) use ($spiderWeb) {
             return call_user_func([$spiderWeb, 'error'], $requestException);
@@ -42,4 +44,17 @@ function createCrawler (ResponseInterface $response) {
         $crawler->addContent($content);
     }
     return $crawler;
+}
+
+/**
+ * @param ResponseInterface $response
+ * @return bool|mixed
+ */
+function transformResponseToJson (ResponseInterface $response) {
+    $content = (string)$response->getBody();
+    $json = json_decode($content);
+    if (json_last_error()) {
+        return false;
+    }
+    return $json;
 }

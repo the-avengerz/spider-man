@@ -1,5 +1,5 @@
 {
-    "name": "jan/spider-man",
+    "name": "avenger/spider-man",
     "authors": [
         {
             "name": "JanHuang",
@@ -15,7 +15,7 @@
             "": "src"
         },
         "files": [
-            "src/functions.php"
+            "src/Support/functions.php"
         ]
     }
 }

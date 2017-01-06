@@ -12,7 +12,7 @@ namespace Spider;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Uri;
 use Item;
-use Pipe;
+use Pipeline;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\DomCrawler\Link;
@@ -45,6 +45,16 @@ abstract class SpiderWeb
     public $emits = [];
 
     /**
+     * @var Crawler
+     */
+    public $node;
+
+    /**
+     * @var ResponseInterface
+     */
+    public $response;
+
+    /**
      * SpiderWeb constructor.
      * @param string $method
      * @param string $uri
@@ -64,11 +74,10 @@ abstract class SpiderWeb
 
     /**
      * @param $pipe
-     * @param Crawler $crawler
-     * @param ResponseInterface $response
+     * @param $filter
      * @return $this
      */
-    public function pipe($pipe, Crawler $crawler, ResponseInterface $response = null)
+    public function pipe($pipe, $filter = '')
     {
         if (is_string($pipe)) {
             if (!class_exists($pipe)) {
@@ -77,11 +86,22 @@ abstract class SpiderWeb
             $pipe = new $pipe();
         }
 
-        if ($pipe instanceof Pipe) {
+        if ($pipe instanceof Pipeline) {
             $pipe->setItem(new Item());
         }
 
-        call_user_func_array([$pipe, 'processItem'], [$crawler, $response]);
+        if (!empty($filter)) {
+            // XPath
+            if ('//' == substr($filter, 0, 2)) {
+                $node = $this->node->filterXPath($filter);
+            } else {
+                $node = $this->node->filter($filter);
+            }
+        } else {
+            $node = $this->node;
+        }
+
+        call_user_func_array([$pipe, 'processItem'], [$node, clone $this->response]);
 
         return $this;
     }
