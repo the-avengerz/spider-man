@@ -1,4 +1,5 @@
 <?php
+use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -11,12 +12,13 @@ use Symfony\Component\DomCrawler\Crawler;
 class DemoPipe extends Pipe
 {
     /**
-     * @param Item|null $item
      * @param Crawler $crawler
+     * @param ResponseInterface $response
      * @return mixed
      */
-    public function processItem(Item $item = null, Crawler $crawler)
+    public function processItem(Crawler $crawler, ResponseInterface $response = null)
     {
-        // TODO: Implement processItem() method.
+        $response->getBody()->rewind();
+        echo $response->getBody();
     }
 }

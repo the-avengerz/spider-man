@@ -65,9 +65,10 @@ abstract class SpiderWeb
     /**
      * @param $pipe
      * @param Crawler $crawler
+     * @param ResponseInterface $response
      * @return $this
      */
-    public function pipe($pipe, Crawler $crawler)
+    public function pipe($pipe, Crawler $crawler, ResponseInterface $response = null)
     {
         if (is_string($pipe)) {
             if (!class_exists($pipe)) {
@@ -76,18 +77,11 @@ abstract class SpiderWeb
             $pipe = new $pipe();
         }
 
-        $item = null;
-        if (isset($pipe->item) && null !== $pipe->item) {
-            if (is_string($pipe->item)) {
-                if (!class_exists($pipe->item)) {
-                    throw new \LogicException(sprintf('Pipe item %s is undefined', $pipe->item));
-                }
-                $item = $pipe->item;
-                $item = new $item;
-            }
+        if ($pipe instanceof Pipe) {
+            $pipe->setItem(new Item());
         }
 
-        call_user_func_array([$pipe, 'processItem'], [$item, $crawler]);
+        call_user_func_array([$pipe, 'processItem'], [$crawler, $response]);
 
         return $this;
     }

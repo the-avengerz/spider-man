@@ -1,4 +1,5 @@
 <?php
+use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -10,12 +11,19 @@ use Symfony\Component\DomCrawler\Crawler;
  */
 abstract class Pipe
 {
-    public $item = null;
+    public $item;
+
+    public function setItem(Item $item)
+    {
+        $this->item = $item;
+
+        return $this;
+    }
 
     /**
-     * @param Item|null $item
      * @param Crawler $crawler
+     * @param ResponseInterface $response
      * @return mixed
      */
-    abstract public function processItem(Item $item = null, Crawler $crawler);
+    abstract public function processItem(Crawler $crawler, ResponseInterface $response = null);
 }
