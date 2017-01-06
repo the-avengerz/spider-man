@@ -23,14 +23,23 @@ function emit (Client $client, SpiderWeb $spiderWeb) {
     return $client
         ->requestAsync($spiderWeb->method, (string)$spiderWeb->uri)
         ->then(function (ResponseInterface $response) use ($spiderWeb) {
-            $crawler = new Crawler(null, (string)$spiderWeb->uri);
-            $response->getBody()->rewind();
-            $content = $response->getBody()->getContents();
-            if (false !== strpos($content, '<')) {
-                $crawler->addContent($content);
-            }
-            return call_user_func_array([$spiderWeb, 'parse'], [$crawler, $response]);
+            $crawler = createCrawler($response);
+            return call_user_func_array([$spiderWeb, 'process'], [$crawler, $response]);
         }, function (RequestException $requestException) use ($spiderWeb) {
             return call_user_func([$spiderWeb, 'error'], $requestException);
         });
+}
+
+/**
+ * @param ResponseInterface $response
+ * @return Crawler
+ */
+function createCrawler (ResponseInterface $response) {
+    $crawler = new Crawler();
+    $response->getBody()->rewind();
+    $content = $response->getBody()->getContents();
+    if (false !== strpos($content, '<')) {
+        $crawler->addContent($content);
+    }
+    return $crawler;
 }

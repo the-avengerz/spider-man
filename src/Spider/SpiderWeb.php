@@ -40,16 +40,6 @@ abstract class SpiderWeb
     public $method = 'GET';
 
     /**
-     * @var string|Item
-     */
-    public $item;
-
-    /**
-     * @var string|Pipe
-     */
-    public $pipe;
-
-    /**
      * @var SpiderWeb[]
      */
     public $emits = [];
@@ -73,23 +63,31 @@ abstract class SpiderWeb
     }
 
     /**
-     * @param $item
-     * @return $this
-     */
-    public function item($item)
-    {
-        $this->item = $item;
-
-        return $this;
-    }
-
-    /**
      * @param $pipe
+     * @param Crawler $crawler
      * @return $this
      */
-    public function pipe($pipe)
+    public function pipe($pipe, Crawler $crawler)
     {
-        $this->pipe = $pipe;
+        if (is_string($pipe)) {
+            if (!class_exists($pipe)) {
+                throw new \LogicException(sprintf('Pipe %s is undefined', $pipe));
+            }
+            $pipe = new $pipe();
+        }
+
+        $item = null;
+        if (isset($pipe->item) && null !== $pipe->item) {
+            if (is_string($pipe->item)) {
+                if (!class_exists($pipe->item)) {
+                    throw new \LogicException(sprintf('Pipe item %s is undefined', $pipe->item));
+                }
+                $item = $pipe->item;
+                $item = new $item;
+            }
+        }
+
+        call_user_func_array([$pipe, 'processItem'], [$item, $crawler]);
 
         return $this;
     }

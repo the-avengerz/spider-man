@@ -7,7 +7,15 @@
  * @link      https://www.github.com/janhuang
  * @link      http://www.fast-d.cn/
  */
-abstract class Item
+class Item
 {
+    public function __set($name, $value)
+    {
+        $this->$name = $value;
+    }
 
+    public function __get($name)
+    {
+        return $this->$name;
+    }
 }
