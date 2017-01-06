@@ -35,12 +35,6 @@ if (!defined('COMPOSER_INSTALL')) {
 
 include COMPOSER_INSTALL;
 
-$application = new Application('spider-man', SpiderMan::VERSION);
-
-$application->addCommands([
-    new SpiderMan()
-]);
-
-$application->setDefaultCommand('spider-man');
+$application = new SpiderMan();
 
 $application->run();
