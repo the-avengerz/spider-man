@@ -20,8 +20,16 @@ use Spider\SpiderWeb;
  * @return PromiseInterface
  */
 function emit (Client $client, SpiderWeb $spiderWeb) {
+    $options = [];
+    if ('GET' == strtoupper($spiderWeb->method)) {
+        $options['query'] = $spiderWeb->args;
+    } else {
+        $options['form_params'] = $spiderWeb->args;
+    }
+    $options['headers'] = $spiderWeb->headers;
+
     return $client
-        ->requestAsync($spiderWeb->method, (string)$spiderWeb->uri)
+        ->requestAsync($spiderWeb->method, (string)$spiderWeb->uri, $options)
         ->then(function (ResponseInterface $response) use ($spiderWeb) {
             $crawler = createCrawler($response);
             $spiderWeb->node = $crawler;

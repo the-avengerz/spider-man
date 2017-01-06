@@ -11,6 +11,7 @@ namespace Behavior;
 
 
 use GuzzleHttp\Client;
+use LogicException;
 use Spider\SpiderWeb;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,7 +26,7 @@ class Emit extends Command
     /**
      * @var Client
      */
-    protected $client;
+    protected $httpClient;
 
     /**
      * @var string
@@ -40,7 +41,7 @@ class Emit extends Command
     {
         parent::__construct($name);
 
-        $this->client = new Client();
+        $this->httpClient = new Client();
     }
 
     /**
@@ -60,17 +61,17 @@ class Emit extends Command
     {
         $webName = $input->getArgument('web');
 
-        $spiderWeb = $this->getWeb($webName);
+        $spiderWeb = $this->createSpiderWeb($webName);
 
         $this->format .= $spiderWeb->name;
 
-        $promise = emit(clone $this->client, $spiderWeb);
+        $promise = emit(clone $this->httpClient, $spiderWeb);
 
         $this->wait([$promise]);
 
         $promises = [];
         foreach ($spiderWeb->emits as $item) {
-            $promises[] = emit(clone $this->client, $item);
+            $promises[] = emit(clone $this->httpClient, $item);
         }
 
         $this->wait($promises);
@@ -91,11 +92,35 @@ class Emit extends Command
      * @param $name
      * @return SpiderWeb
      */
-    public function getWeb($name)
+    public function createSpiderWeb($name)
     {
-        include_once __DIR__ . '/../../example/demo/DemoPipe.php';
-        include_once __DIR__ . '/../../example/demo/DemoSpiderWeb.php';
+        $config = getcwd() . '/config.php';
 
-        return new \DemoSpiderWeb('GET', 'http://api.k780.com:88/?app=ip.get&ip=8.8.8.8&appkey=10003&sign=b59bc3ef6191eb9f747dd4e83c99f2a4&format=json');
+        if (!file_exists($config)) {
+            throw new LogicException(sprintf('Unable find (config.php) in %s', $config));
+        }
+
+        $config = include_once $config;
+
+        if (!isset($config[$name])) {
+            throw new LogicException(sprintf('Spider web %s is undefined.', $name));
+        }
+
+        $spiderWeb = isset($config[$name]['index']) ? $config[$name]['index'] : null;
+
+        if (!class_exists($spiderWeb)) {
+            include $config[$name]['dir'] . '/' . $spiderWeb . '.php';
+        }
+
+        if (is_string($spiderWeb)) {
+            return new $spiderWeb(
+                $config[$name]['request']['method'],
+                $config[$name]['request']['url'],
+                isset($config[$name]['request']['args']) ? $config[$name]['request']['args'] : [],
+                isset($config[$name]['request']['headers']) ? $config[$name]['request']['headers'] : []
+            );
+        }
+
+        return $spiderWeb;
     }
 }

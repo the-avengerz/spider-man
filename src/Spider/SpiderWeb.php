@@ -40,6 +40,16 @@ abstract class SpiderWeb
     public $method = 'GET';
 
     /**
+     * @var array
+     */
+    public $args = [];
+
+    /**
+     * @var array
+     */
+    public $headers = [];
+
+    /**
      * @var SpiderWeb[]
      */
     public $emits = [];
@@ -58,10 +68,16 @@ abstract class SpiderWeb
      * SpiderWeb constructor.
      * @param string $method
      * @param string $uri
+     * @param $args
+     * @param $headers
      */
-    public function __construct($method = 'GET', $uri = '')
+    public function __construct($method = 'GET', $uri = '', array $args = [], array $headers = [])
     {
         $this->method = $method;
+
+        $this->args = $args;
+
+        $this->headers = $headers;
 
         if ($uri instanceof Uri) {
             $this->uri = $uri;
