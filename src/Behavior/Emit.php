@@ -113,13 +113,14 @@ class Emit extends Command
         }
 
         if (is_string($spiderWeb)) {
-            return new $spiderWeb(
-                $config[$name]['request']['method'],
-                $config[$name]['request']['url'],
-                isset($config[$name]['request']['args']) ? $config[$name]['request']['args'] : [],
-                isset($config[$name]['request']['headers']) ? $config[$name]['request']['headers'] : []
+            $spiderWeb = new $spiderWeb(
+                $config[$name]['method'],
+                $config[$name]['url'],
+                isset($config[$name]['options']) ? $config[$name]['options'] : []
             );
         }
+
+        $spiderWeb->dir = isset($config[$name]['dir']) ? $config[$name]['dir'] : '.';
 
         return $spiderWeb;
     }

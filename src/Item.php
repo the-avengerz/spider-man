@@ -9,6 +9,11 @@
  */
 class Item
 {
+    /**
+     * @var 节点
+     */
+    public $node;
+
     public $attributes = [];
 
     public function __set($name, $value)

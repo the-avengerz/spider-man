@@ -13,6 +13,21 @@ abstract class Pipeline
 {
     public $item;
 
+    public $spiderWeb;
+
+    /**
+     * Pipeline constructor.
+     * @param \Spider\SpiderWeb $spiderWeb
+     */
+    public function __construct(\Spider\SpiderWeb $spiderWeb)
+    {
+        $this->spiderWeb = $spiderWeb;
+    }
+
+    /**
+     * @param Item $item
+     * @return $this
+     */
     public function setItem(Item $item)
     {
         $this->item = $item;

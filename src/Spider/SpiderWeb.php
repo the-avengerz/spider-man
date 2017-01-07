@@ -27,6 +27,11 @@ abstract class SpiderWeb
     /**
      * @var string
      */
+    public $dir;
+
+    /**
+     * @var string
+     */
     public $name;
 
     /**
@@ -42,12 +47,7 @@ abstract class SpiderWeb
     /**
      * @var array
      */
-    public $args = [];
-
-    /**
-     * @var array
-     */
-    public $headers = [];
+    public $options = [];
 
     /**
      * @var SpiderWeb[]
@@ -68,16 +68,13 @@ abstract class SpiderWeb
      * SpiderWeb constructor.
      * @param string $method
      * @param string $uri
-     * @param $args
-     * @param $headers
+     * @param $options
      */
-    public function __construct($method = 'GET', $uri = '', array $args = [], array $headers = [])
+    public function __construct($method = 'GET', $uri = '', array $options = [])
     {
         $this->method = $method;
 
-        $this->args = $args;
-
-        $this->headers = $headers;
+        $this->options = $options;
 
         if ($uri instanceof Uri) {
             $this->uri = $uri;
@@ -99,7 +96,7 @@ abstract class SpiderWeb
             if (!class_exists($pipe)) {
                 throw new \LogicException(sprintf('Pipe %s is undefined', $pipe));
             }
-            $pipe = new $pipe();
+            $pipe = new $pipe($this);
         }
 
         if ($pipe instanceof Pipeline) {

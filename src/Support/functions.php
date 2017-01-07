@@ -20,18 +20,10 @@ use Spider\SpiderWeb;
  * @return PromiseInterface
  */
 function emit (Client $client, SpiderWeb $spiderWeb) {
-    $options = [];
-    if ('GET' == strtoupper($spiderWeb->method)) {
-        $options['query'] = $spiderWeb->args;
-    } else {
-        $options['form_params'] = $spiderWeb->args;
-    }
-    $options['headers'] = $spiderWeb->headers;
-
     return $client
-        ->requestAsync($spiderWeb->method, (string)$spiderWeb->uri, $options)
+        ->requestAsync($spiderWeb->method, (string)$spiderWeb->uri, $spiderWeb->options)
         ->then(function (ResponseInterface $response) use ($spiderWeb) {
-            $crawler = createCrawler($response);
+            $crawler = createCrawler($spiderWeb, $response);
             $spiderWeb->node = $crawler;
             $spiderWeb->response = $response;
             return call_user_func_array([$spiderWeb, 'process'], [$crawler, $response]);
@@ -41,17 +33,17 @@ function emit (Client $client, SpiderWeb $spiderWeb) {
 }
 
 /**
+ * @param SpiderWeb $spiderWeb
  * @param ResponseInterface $response
  * @return Crawler
  */
-function createCrawler (ResponseInterface $response) {
-    $crawler = new Crawler();
+function createCrawler (SpiderWeb $spiderWeb, ResponseInterface $response) {
     $response->getBody()->rewind();
     $content = $response->getBody()->getContents();
-    if (false !== strpos($content, '<')) {
-        $crawler->addContent($content);
+    if ('<' !== substr($content, 0, 1)) {
+        $content = '';
     }
-    return $crawler;
+    return new Crawler($content, (string)$spiderWeb->uri);
 }
 
 /**
