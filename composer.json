@@ -10,6 +10,9 @@
         "fabpot/goutte": "~3.2",
         "symfony/console": "~3.2"
     },
+    "require-dev": {
+        "phpoffice/phpexcel": "^1.8"
+    },
     "autoload": {
         "psr-4": {
             "": "src"

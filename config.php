@@ -22,5 +22,11 @@ return [
         'options' => [
             'download_path' => __DIR__ . '/downloads/you',
         ]
+    ],
+    'hz' => [
+        'index' => new \hz\HaiZhuSpiderWeb('POST', 'http://haizhu.gov.cn:8080/haizhuhome/peopleService/serviceOrgList'),
+        'options' => [
+            'download_path' => __DIR__ . '/downloads'
+        ]
     ]
 ];

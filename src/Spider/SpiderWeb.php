@@ -14,6 +14,7 @@ use GuzzleHttp\Psr7\Uri;
 use Item;
 use Pipeline;
 use Psr\Http\Message\ResponseInterface;
+use State\Tying;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\DomCrawler\Link;
@@ -75,6 +76,8 @@ abstract class SpiderWeb
      */
     public $error = 0;
 
+    public $state;
+
     /**
      * SpiderWeb constructor.
      * @param string $method
@@ -94,6 +97,8 @@ abstract class SpiderWeb
         } else {
             $this->uri = new Uri($uri);
         }
+
+        $this->state = Tying::$tying;
     }
 
     /**
@@ -141,6 +146,15 @@ abstract class SpiderWeb
         $this->emits[] = $spiderWeb;
 
         return $this;
+    }
+
+    /**
+     * @param $name
+     * @return mixed
+     */
+    public function state($name)
+    {
+        return Tying::$tying[$name];
     }
 
     /**

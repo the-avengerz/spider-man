@@ -86,7 +86,7 @@ class Emit extends Command
 
         $this->progress->start();
 
-        $this->wait([$promise]);
+        $process = $this->wait([$promise]);
 
         $promises = [];
         foreach ($spiderWeb->emits as $item) {
@@ -95,7 +95,11 @@ class Emit extends Command
             $promises[] = emit(clone $this->httpClient, $item, $this->progress);
         }
 
-        $this->wait($promises);
+        $results = $this->wait($promises);
+
+        if (is_callable($process[0])) {
+            call_user_func($process[0], $results);
+        }
 
         $this->progress->finish();
 

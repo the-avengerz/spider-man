@@ -56,12 +56,13 @@ function createCrawler(SpiderWeb $spiderWeb, ResponseInterface $response)
 
 /**
  * @param ResponseInterface $response
+ * @param bool $assoc
  * @return bool|mixed
  */
-function transformResponseToJson(ResponseInterface $response)
+function transformResponseToJson(ResponseInterface $response, $assoc = true)
 {
     $content = (string)$response->getBody();
-    $json = json_decode($content);
+    $json = json_decode($content, $assoc);
     if (json_last_error()) {
         return false;
     }
