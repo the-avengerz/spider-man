@@ -27,10 +27,13 @@ class ImagePipeline extends DownloadPipeline
      */
     public function processItem(Crawler $node = null, ResponseInterface $response = null)
     {
+        $items = [];
         foreach ($node->filter('img')->images() as $image) {
             $imageItem = new ImageItem($image);
-            $this->download($image->getUri(), $imageItem->uri->getPath());
+            $items[] = $this->download($image->getUri(), $imageItem->uri->getPath());
             unset($imageItem);
         }
+
+        return $items;
     }
 }

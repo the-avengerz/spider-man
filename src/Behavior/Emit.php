@@ -14,6 +14,7 @@ use GuzzleHttp\Client;
 use LogicException;
 use Spider\SpiderWeb;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -32,6 +33,20 @@ class Emit extends Command
      * @var string
      */
     protected $format = '';
+
+    /**
+     * @var ProgressBar
+     */
+    protected $progress;
+
+    /**
+     * @var array
+     */
+    public static $stateTying = [
+        'name' => '',
+        'method' => '',
+        'uri' => '',
+    ];
 
     /**
      * Emit constructor.
@@ -63,18 +78,26 @@ class Emit extends Command
 
         $spiderWeb = $this->createSpiderWeb($webName);
 
-        $this->format .= $spiderWeb->name;
+        $this->progress = $this->createProgressBar($spiderWeb, $output);
 
-        $promise = emit(clone $this->httpClient, $spiderWeb);
+        $spiderWeb->progress = $this->progress;
+
+        $promise = emit(clone $this->httpClient, $spiderWeb, $this->progress);
+
+        $this->progress->start();
 
         $this->wait([$promise]);
 
         $promises = [];
         foreach ($spiderWeb->emits as $item) {
-            $promises[] = emit(clone $this->httpClient, $item);
+            $this->stateTying($item);
+            $item->progress = $this->progress;
+            $promises[] = emit(clone $this->httpClient, $item, $this->progress);
         }
 
         $this->wait($promises);
+
+        $this->progress->finish();
 
         return 0;
     }
@@ -86,6 +109,37 @@ class Emit extends Command
     protected function wait(array $promises)
     {
         return \GuzzleHttp\Promise\unwrap($promises);
+    }
+
+    /**
+     * @param SpiderWeb $spiderWeb
+     * @return $this
+     */
+    protected function stateTying(SpiderWeb $spiderWeb)
+    {
+        Emit::$stateTying['method'] = $spiderWeb->method;
+        Emit::$stateTying['uri'] = (string)$spiderWeb->uri;
+
+        return $this;
+    }
+
+    /**
+     * @param SpiderWeb $spiderWeb
+     * @param OutputInterface $output
+     * @return ProgressBar
+     */
+    protected function createProgressBar(SpiderWeb $spiderWeb, OutputInterface $output)
+    {
+        $progress = new ProgressBar($output, 1);
+
+        $this->stateTying($spiderWeb);
+
+        ProgressBar::setPlaceholderFormatterDefinition('method', function () { return Emit::$stateTying['method']; });
+        ProgressBar::setPlaceholderFormatterDefinition('url', function () { return (string) Emit::$stateTying['uri']; });
+
+        $progress->setFormat("[%method%] %url%\n%current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s%");
+
+        return $progress;
     }
 
     /**
@@ -108,10 +162,6 @@ class Emit extends Command
 
         $spiderWeb = isset($config[$name]['index']) ? $config[$name]['index'] : null;
 
-        if (!class_exists($spiderWeb)) {
-            include $config[$name]['dir'] . '/' . $spiderWeb . '.php';
-        }
-
         if (is_string($spiderWeb)) {
             $spiderWeb = new $spiderWeb(
                 $config[$name]['method'],
@@ -119,6 +169,8 @@ class Emit extends Command
                 isset($config[$name]['options']) ? $config[$name]['options'] : []
             );
         }
+
+        $spiderWeb->options = isset($config[$name]['options']) ? $config[$name]['options'] : [];
 
         $spiderWeb->dir = isset($config[$name]['dir']) ? $config[$name]['dir'] : '.';
 

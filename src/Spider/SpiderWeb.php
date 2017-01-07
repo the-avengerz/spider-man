@@ -14,6 +14,7 @@ use GuzzleHttp\Psr7\Uri;
 use Item;
 use Pipeline;
 use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\DomCrawler\Link;
 
@@ -28,11 +29,6 @@ abstract class SpiderWeb
      * @var string
      */
     public $dir;
-
-    /**
-     * @var string
-     */
-    public $name;
 
     /**
      * @var Uri
@@ -63,6 +59,21 @@ abstract class SpiderWeb
      * @var ResponseInterface
      */
     public $response;
+
+    /**
+     * @var ProgressBar
+     */
+    public $progress;
+
+    /**
+     * @var int
+     */
+    public $success = 0;
+
+    /**
+     * @var int
+     */
+    public $error = 0;
 
     /**
      * SpiderWeb constructor.
@@ -125,7 +136,31 @@ abstract class SpiderWeb
      */
     public function emit(SpiderWeb $spiderWeb)
     {
+        $spiderWeb->options = array_merge($this->options, $spiderWeb->options);
+
         $this->emits[] = $spiderWeb;
+
+        return $this;
+    }
+
+    /**
+     * @param $step
+     * @return $this
+     */
+    public function setMaxProgress($step)
+    {
+        $this->progress->setProgress($step);
+
+        return $this;
+    }
+
+    /**
+     * @param $step
+     * @return $this
+     */
+    public function setStartProgress($step)
+    {
+        $this->progress->setProgress($step);
 
         return $this;
     }

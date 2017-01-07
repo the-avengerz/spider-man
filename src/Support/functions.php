@@ -11,23 +11,30 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\DomCrawler\Crawler;
 use Spider\SpiderWeb;
 
 /**
  * @param Client $client
  * @param SpiderWeb $spiderWeb
+ * @param ProgressBar $bar
  * @return PromiseInterface
  */
-function emit (Client $client, SpiderWeb $spiderWeb) {
+function emit(Client $client, SpiderWeb $spiderWeb, ProgressBar $bar = null)
+{
     return $client
         ->requestAsync($spiderWeb->method, (string)$spiderWeb->uri, $spiderWeb->options)
-        ->then(function (ResponseInterface $response) use ($spiderWeb) {
+        ->then(function (ResponseInterface $response) use ($spiderWeb, $bar) {
             $crawler = createCrawler($spiderWeb, $response);
             $spiderWeb->node = $crawler;
             $spiderWeb->response = $response;
+            $spiderWeb->success++;
+            $bar->advance();
             return call_user_func_array([$spiderWeb, 'process'], [$crawler, $response]);
-        }, function (RequestException $requestException) use ($spiderWeb) {
+        }, function (RequestException $requestException) use ($spiderWeb, $bar) {
+            $spiderWeb->error++;
+            $bar->advance();
             return call_user_func([$spiderWeb, 'error'], $requestException);
         });
 }
@@ -37,7 +44,8 @@ function emit (Client $client, SpiderWeb $spiderWeb) {
  * @param ResponseInterface $response
  * @return Crawler
  */
-function createCrawler (SpiderWeb $spiderWeb, ResponseInterface $response) {
+function createCrawler(SpiderWeb $spiderWeb, ResponseInterface $response)
+{
     $response->getBody()->rewind();
     $content = $response->getBody()->getContents();
     if ('<' !== substr($content, 0, 1)) {
@@ -50,11 +58,26 @@ function createCrawler (SpiderWeb $spiderWeb, ResponseInterface $response) {
  * @param ResponseInterface $response
  * @return bool|mixed
  */
-function transformResponseToJson (ResponseInterface $response) {
+function transformResponseToJson(ResponseInterface $response)
+{
     $content = (string)$response->getBody();
     $json = json_decode($content);
     if (json_last_error()) {
         return false;
     }
     return $json;
+}
+
+/**
+ * @param $message
+ */
+function output($message)
+{
+    if (SpiderMan::$output->isQuiet()
+        || SpiderMan::$output->isVerbose()
+        || SpiderMan::$output->isVeryVerbose()
+        || SpiderMan::$output->isDebug()
+    ) {
+        SpiderMan::$output->writeln($message);
+    }
 }

@@ -20,6 +20,11 @@ class SpiderMan extends Application
     const BEHAVIOR = 'emit';
 
     /**
+     * @var OutputInterface
+     */
+    public static $output;
+
+    /**
      * SpiderMan constructor.
      */
     public function __construct()
@@ -55,6 +60,8 @@ class SpiderMan extends Application
      */
     public function doRun(InputInterface $input, OutputInterface $output)
     {
+        SpiderMan::$output = $output;
+
         $output->writeln('Hey One. I\'m ' . SpiderMan::NAME . '. Spider Man');
 
         $exitCode = parent::doRun($input, $output);

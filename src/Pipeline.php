@@ -13,6 +13,9 @@ abstract class Pipeline
 {
     public $item;
 
+    /**
+     * @var \Spider\SpiderWeb
+     */
     public $spiderWeb;
 
     /**
