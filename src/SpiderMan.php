@@ -1,5 +1,7 @@
 <?php
+use Behavior\Emit;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -20,18 +22,13 @@ class SpiderMan extends Application
     const BEHAVIOR = 'emit';
 
     /**
-     * @var OutputInterface
-     */
-    public static $output;
-
-    /**
      * SpiderMan constructor.
      */
     public function __construct()
     {
         parent::__construct(SpiderMan::NAME, SpiderMan::VERSION);
 
-        $this->add(new \Behavior\Emit(SpiderMan::BEHAVIOR));
+        $this->add(new Emit(SpiderMan::BEHAVIOR));
 
         $this->setDefaultCommand(SpiderMan::BEHAVIOR);
     }
@@ -60,9 +57,11 @@ class SpiderMan extends Application
      */
     public function doRun(InputInterface $input, OutputInterface $output)
     {
-        SpiderMan::$output = $output;
+        state('output', $output);
 
-        $output->writeln('Hey One. I\'m ' . SpiderMan::NAME . '. Spider Man');
+        state('progress.bar', new ProgressBar($output, 1));
+
+        $output->writeln('Hey One. I\'m ' . SpiderMan::NAME . '. Spider Man' . ' Version: ' . SpiderMan::VERSION);
 
         $exitCode = parent::doRun($input, $output);
 

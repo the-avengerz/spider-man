@@ -12,7 +12,7 @@ namespace Behavior;
 
 use GuzzleHttp\Client;
 use LogicException;
-use Spider\SpiderWeb;
+use Pipeline;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
@@ -24,29 +24,12 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class Emit extends Command
 {
+    const SPIDER_WEB = 'pipeline';
+
     /**
      * @var Client
      */
     protected $httpClient;
-
-    /**
-     * @var string
-     */
-    protected $format = '';
-
-    /**
-     * @var ProgressBar
-     */
-    protected $progress;
-
-    /**
-     * @var array
-     */
-    public static $stateTying = [
-        'name' => '',
-        'method' => '',
-        'uri' => '',
-    ];
 
     /**
      * Emit constructor.
@@ -64,7 +47,7 @@ class Emit extends Command
      */
     public function configure()
     {
-        $this->addArgument('web');
+        $this->addArgument(Emit::SPIDER_WEB);
     }
 
     /**
@@ -74,72 +57,55 @@ class Emit extends Command
      */
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $webName = $input->getArgument('web');
+        $pipeline = $input->getArgument(Emit::SPIDER_WEB);
 
-        $spiderWeb = $this->createSpiderWeb($webName);
+        $pipeline = $this->createPipeline($pipeline);
 
-        $this->progress = $this->createProgressBar($spiderWeb, $output);
+        $progress = $this->initProgressBar($pipeline);
 
-        $spiderWeb->progress = $this->progress;
+        $progress->start(1);
 
-        $promise = emit(clone $this->httpClient, $spiderWeb, $this->progress);
+        $process = wait([$pipeline($this->httpClient)]);
 
-        $this->progress->start();
-
-        $process = $this->wait([$promise]);
-
-        $promises = [];
-        foreach ($spiderWeb->emits as $item) {
-            $this->stateTying($item);
-            $item->progress = $this->progress;
-            $promises[] = emit(clone $this->httpClient, $item, $this->progress);
+        $results = [];
+        if (is_array($promises = state('promise.pipelines'))) {
+            $results = wait($promises);
+            unset($promises);
         }
-
-        $results = $this->wait($promises);
 
         if (is_callable($process[0])) {
             call_user_func($process[0], $results);
         }
 
-        $this->progress->finish();
+        $progress->finish();
 
         return 0;
     }
 
     /**
-     * @param array $promises
-     * @return array
-     */
-    protected function wait(array $promises)
-    {
-        return \GuzzleHttp\Promise\unwrap($promises);
-    }
-
-    /**
-     * @param SpiderWeb $spiderWeb
+     * @param Pipeline $pipeline
      * @return $this
      */
-    protected function stateTying(SpiderWeb $spiderWeb)
+    protected function statePipeline(Pipeline $pipeline)
     {
-        Emit::$stateTying['method'] = $spiderWeb->method;
-        Emit::$stateTying['uri'] = (string)$spiderWeb->uri;
+        state('method', $pipeline->method);
+        state('uri', (string)$pipeline->uri);
 
         return $this;
     }
 
     /**
-     * @param SpiderWeb $spiderWeb
-     * @param OutputInterface $output
+     * @param Pipeline $pipeline
      * @return ProgressBar
      */
-    protected function createProgressBar(SpiderWeb $spiderWeb, OutputInterface $output)
+    protected function initProgressBar(Pipeline $pipeline)
     {
-        $progress = new ProgressBar($output, 1);
+        $this->statePipeline($pipeline);
 
-        $this->stateTying($spiderWeb);
+        $progress = state('progress.bar');
 
-        ProgressBar::setPlaceholderFormatterDefinition('method', function () { return Emit::$stateTying['method']; });
-        ProgressBar::setPlaceholderFormatterDefinition('url', function () { return (string) Emit::$stateTying['uri']; });
+        ProgressBar::setPlaceholderFormatterDefinition('method', function () { return state('method'); });
+        ProgressBar::setPlaceholderFormatterDefinition('url', function () { return state('uri'); });
 
         $progress->setFormat("[%method%] %url%\n%current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s%");
 
@@ -148,9 +114,9 @@ class Emit extends Command
 
     /**
      * @param $name
-     * @return SpiderWeb
+     * @return Pipeline
      */
-    public function createSpiderWeb($name)
+    public function createPipeline($name)
     {
         $config = getcwd() . '/config.php';
 
@@ -161,23 +127,25 @@ class Emit extends Command
         $config = include_once $config;
 
         if (!isset($config[$name])) {
-            throw new LogicException(sprintf('Spider web %s is undefined.', $name));
+            throw new LogicException(sprintf('Spider pipeline %s is undefined.', $name));
         }
 
-        $spiderWeb = isset($config[$name]['index']) ? $config[$name]['index'] : null;
+        $config = $config[$name];
 
-        if (is_string($spiderWeb)) {
-            $spiderWeb = new $spiderWeb(
-                $config[$name]['method'],
-                $config[$name]['url'],
-                isset($config[$name]['options']) ? $config[$name]['options'] : []
-            );
+        state('config', $config);
+
+        $pipeline = isset($config['index']) ? $config['index'] : null;
+
+        if (is_string($pipeline)) {
+            $pipeline = new $pipeline($config['method'], $config['url']);
+
+            if (!($pipeline instanceof Pipeline)) {
+                throw new LogicException(sprintf('Spider pipeline index must be instance %s', Pipeline::class));
+            }
         }
 
-        $spiderWeb->options = isset($config[$name]['options']) ? $config[$name]['options'] : [];
+        $pipeline->options = isset($config['options']) ? $config['options'] : [];
 
-        $spiderWeb->dir = isset($config[$name]['dir']) ? $config[$name]['dir'] : '.';
-
-        return $spiderWeb;
+        return $pipeline;
     }
 }

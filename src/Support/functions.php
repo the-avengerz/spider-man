@@ -8,50 +8,24 @@
  */
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\ResponseInterface;
-use Symfony\Component\Console\Helper\ProgressBar;
+use State\Tying;
 use Symfony\Component\DomCrawler\Crawler;
-use Spider\SpiderWeb;
 
 /**
- * @param Client $client
- * @param SpiderWeb $spiderWeb
- * @param ProgressBar $bar
- * @return PromiseInterface
- */
-function emit(Client $client, SpiderWeb $spiderWeb, ProgressBar $bar = null)
-{
-    return $client
-        ->requestAsync($spiderWeb->method, (string)$spiderWeb->uri, $spiderWeb->options)
-        ->then(function (ResponseInterface $response) use ($spiderWeb, $bar) {
-            $crawler = createCrawler($spiderWeb, $response);
-            $spiderWeb->node = $crawler;
-            $spiderWeb->response = $response;
-            $spiderWeb->success++;
-            $bar->advance();
-            return call_user_func_array([$spiderWeb, 'process'], [$crawler, $response]);
-        }, function (RequestException $requestException) use ($spiderWeb, $bar) {
-            $spiderWeb->error++;
-            $bar->advance();
-            return call_user_func([$spiderWeb, 'error'], $requestException);
-        });
-}
-
-/**
- * @param SpiderWeb $spiderWeb
+ * @param Pipeline $pipeline
  * @param ResponseInterface $response
  * @return Crawler
  */
-function createCrawler(SpiderWeb $spiderWeb, ResponseInterface $response)
+function createCrawler(Pipeline $pipeline, ResponseInterface $response)
 {
     $response->getBody()->rewind();
     $content = $response->getBody()->getContents();
     if ('<' !== substr($content, 0, 1)) {
         $content = '';
     }
-    return new Crawler($content, (string)$spiderWeb->uri);
+    return new Crawler($content, (string)$pipeline->uri);
 }
 
 /**
@@ -74,11 +48,68 @@ function transformResponseToJson(ResponseInterface $response, $assoc = true)
  */
 function output($message)
 {
-    if (SpiderMan::$output->isQuiet()
-        || SpiderMan::$output->isVerbose()
-        || SpiderMan::$output->isVeryVerbose()
-        || SpiderMan::$output->isDebug()
+    $output = state('output');
+
+    if ($output->isQuiet()
+        || $output->isVerbose()
+        || $output->isVeryVerbose()
+        || $output->isDebug()
     ) {
-        SpiderMan::$output->writeln($message);
+        $output->writeln($message);
     }
+}
+
+/**
+ * @param $name
+ * @param null $value
+ * @param bool $append
+ * @return bool|null
+ */
+function state($name, $value = null, $append = false)
+{
+    if (null === $value) {
+        return isset(Tying::$tying[$name]) ? Tying::$tying[$name] : false;
+    }
+
+    if ($append) {
+        Tying::$tying[$name][] = $value;
+    } else {
+        Tying::$tying[$name] = $value;
+    }
+
+    return true;
+}
+
+/**
+ * @param Client $client
+ * @param Pipeline $pipeline
+ * @return PromiseInterface
+ */
+function promise (Client $client, Pipeline $pipeline) {
+    $promise = $pipeline($client);
+    state('promise.pipelines', $promise, true);
+    return $promise;
+}
+
+/**
+ * @param PromiseInterface[] $promise
+ * @return array
+ */
+function wait(array $promise)
+{
+    return \GuzzleHttp\Promise\unwrap($promise);
+}
+
+/**
+ * @param $step
+ */
+function progressBarMaxStep($step)
+{
+    $bar = state('progress.bar');
+
+    $current = $bar->getMaxSteps();
+
+    $bar->setProgress(($current + $step));
+
+    $bar->setProgress($current);
 }

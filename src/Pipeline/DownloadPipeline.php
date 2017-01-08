@@ -9,35 +9,46 @@
 
 namespace Pipeline;
 
+use GuzzleHttp\Exception\RequestException;
+use Pipeline;
+use Symfony\Component\Console\Exception\LogicException;
+
 
 /**
  * Class DownloadPipeline
  * @package Pipeline
  */
-abstract class DownloadPipeline extends \Pipeline
+abstract class DownloadPipeline extends Pipeline
 {
     /**
-     * @param $uri
      * @param $file
      * @param $timeout
      * @return int
      */
-    public function download($uri, $file, $timeout = 30)
+    public function download($file = null, $timeout = 30)
     {
-        $content = file_get_contents($uri, false, stream_context_create([
+        $config = state('config');
+        if (!isset($config['download_path'])) {
+            throw new LogicException(sprintf('Undefined download path.'));
+        }
+
+        if (null === $file) {
+            $file = $this->uri->getPath();
+        }
+
+        $content = file_get_contents((string) $this->uri, false, stream_context_create([
             'http' => [
                 'method' => "GET",
                 'timeout' => $timeout,//单位秒
             ]
         ]));
 
-        $dir = isset($this->spiderWeb->options['download_path']) ? $this->spiderWeb->options['download_path'] : $this->spiderWeb->dir;
-
-        $file = $dir . $file;
+        $file = $config['download_path'] . $file;
 
         $this->targetDirectory(dirname($file));
 
         if (file_put_contents($file, $content)) {
+            unset($content);
             return $file;
         }
 
@@ -55,5 +66,14 @@ abstract class DownloadPipeline extends \Pipeline
         }
 
         return true;
+    }
+
+    /**
+     * @param RequestException $exception
+     * @return mixed
+     */
+    public function error(RequestException $exception)
+    {
+        output($exception->getMessage());
     }
 }

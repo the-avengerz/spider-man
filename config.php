@@ -8,7 +8,7 @@
  */
 
 return [
-    'ha' => [
+    /*'ha' => [
         'index' => new \haha\HaSpiderWeb('GET', 'http://www.haha.mx/topic/1/new/'),
         'options' => [
             'headers' => [
@@ -28,5 +28,17 @@ return [
         'options' => [
             'download_path' => __DIR__ . '/downloads'
         ]
+    ],*/
+    'weibo' => [
+        'index' => new \weibo\WeiBoPipeline('GET', 'http://m.weibo.cn/container/getIndex?type=uid&value=5143249142&containerid=1076035143249142'),
+        'options' => [
+            'headers' => [
+                'User-Agent' => 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1',
+                'X-Requested-With' => 'XMLHttpRequest',
+                'Referer' => 'http://m.weibo.cn/u/5143249142',
+                'Host' => 'm.weibo.cn'
+            ],
+        ],
+        'download_path' => __DIR__ . '/downloads/weibo'
     ]
 ];

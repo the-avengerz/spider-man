@@ -8,8 +8,7 @@
  * @link      http://www.fast-d.cn/
  */
 
-use Symfony\Component\Console\Application;
-
+ini_set('memory_limit', '1024M');
 set_time_limit(0);
 date_default_timezone_set('PRC');
 

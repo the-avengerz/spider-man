@@ -10,7 +10,6 @@
 namespace Pipeline;
 
 
-use Item\ImageItem;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -21,19 +20,17 @@ use Symfony\Component\DomCrawler\Crawler;
 class ImagePipeline extends DownloadPipeline
 {
     /**
-     * @param Crawler|null $node
-     * @param ResponseInterface|null $response
+     * @param Crawler $crawler
+     * @param ResponseInterface $response
      * @return mixed
      */
-    public function processItem(Crawler $node = null, ResponseInterface $response = null)
+    public function process(Crawler $crawler = null, ResponseInterface $response = null)
     {
-        $items = [];
-        foreach ($node->filter('img')->images() as $image) {
-            $imageItem = new ImageItem($image);
-            $items[] = $this->download($image->getUri(), $imageItem->uri->getPath());
-            unset($imageItem);
-        }
+        $file = $this->download();
 
-        return $items;
+        output('');
+        output($file);
+
+        return $file;
     }
 }
