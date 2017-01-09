@@ -10,18 +10,12 @@
 namespace weibo;
 
 
-use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
-use Pipeline;
 use Pipeline\ImagePipeline;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
-/**
- * Class WeiBoPipeline
- * @package weibo
- */
-class WeiBoPipeline extends Pipeline
+class PagePipeline extends \Pipeline
 {
     /**
      * @param Crawler $crawler
@@ -30,13 +24,20 @@ class WeiBoPipeline extends Pipeline
      */
     public function process(Crawler $crawler = null, ResponseInterface $response = null)
     {
-        for ($i = 1; $i <= 3; $i++) {
-            $this->pipeline(new PagePipeline('GET', 'http://m.weibo.cn/container/getIndex?type=uid&value=5143249142&containerid=1076035143249142&page=' . $i, $this->options));
+        $json = transformResponseToJson($response);
+
+        $total = 0;
+        $promises = [];
+        foreach ($json['cards'] as $card) {
+            foreach ($card['mblog']['pics'] as $item) {
+                $total++;
+                $promises[] = $this->pipeline(new ImagePipeline('GET', $item['large']['url']));
+            }
         }
 
-        return function (array $results) {
-            echo count($results);
-        };
+        progressBarMaxStep($total);
+        wait($promises);
+        unset($promises);
     }
 
     /**
