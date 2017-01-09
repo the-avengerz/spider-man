@@ -2,16 +2,18 @@
 
 I'm Spider-Man.
 
+### Installation
+
+```
+composer -vvv require avenger/spider-man
+```
+
 ### Usage 
 
-##### 采集哈哈网图片
+##### 采集微博图片
 
 ```
-php spider-man ha
+php spider-man weibo
 ```
 
-##### 采集尤果网图片，演示10页
-
-```
-php spider-man you
-```
+其他功能可以自己完善，暂时没有时间处理
