@@ -8,7 +8,9 @@
     ],
     "require": {
         "fabpot/goutte": "~3.2",
-        "symfony/console": "~3.2"
+        "symfony/console": "~3.2",
+        "fzaninotto/faker": "~1.6.0",
+        "jonnyw/php-phantomjs": "~4.5.0"
     },
     "require-dev": {
         "phpoffice/phpexcel": "^1.8"
@@ -25,6 +27,9 @@
         "psr-4": {
             "": "example"
         }
+    },
+    "config": {
+        "bin-dir": "bin"
     },
     "bin": [
         "spider-man"
