@@ -84,7 +84,13 @@ abstract class Pipeline
 
         $this->uri = $uri;
 
-        $this->options = $options;
+        $this->options = array_merge([
+            'headers' => [
+                'User-Agent' => state('faker')->userAgent,
+                'CLIENT-IP' => state('faker')->ipv4,
+                'X-FORWARDED-FOR' => state('faker')->ipv4,
+            ]
+        ], $options);
 
         $this->success = function (ResponseInterface $response) {
             $crawler = createCrawler($this, $response);

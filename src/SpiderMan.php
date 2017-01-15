@@ -1,5 +1,8 @@
 <?php
 use Behavior\Emit;
+use Faker\Generator;
+use Faker\Provider\Internet;
+use Faker\Provider\UserAgent;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\ArgvInput;
@@ -60,6 +63,11 @@ class SpiderMan extends Application
         state('output', $output);
 
         state('progress.bar', new ProgressBar($output, 1));
+
+        $faker = new Generator();
+        $faker->addProvider(new UserAgent($faker));
+        $faker->addProvider(new Internet($faker));
+        state('faker', $faker);
 
         $output->writeln('Hey One. I\'m ' . SpiderMan::NAME . '. Spider Man' . ' Version: ' . SpiderMan::VERSION);
 
