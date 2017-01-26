@@ -13,7 +13,9 @@
         "jonnyw/php-phantomjs": "~4.5.0"
     },
     "require-dev": {
-        "phpoffice/phpexcel": "^1.8"
+        "phpoffice/phpword": "v0.13.*",
+        "phpoffice/phpexcel": "^1.8",
+        "propel/propel": "~2.0@dev"
     },
     "autoload": {
         "psr-4": {

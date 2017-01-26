@@ -68,9 +68,15 @@ class Emit extends Command
         $process = wait([$pipeline($this->httpClient)]);
 
         $results = [];
-        if (is_array($promises = state('promise.pipelines'))) {
-            $results = wait($promises);
-            unset($promises);
+        $index = 0;
+
+        while (!empty(state('promise.pipelines'))) {
+            if (is_array($promises = state('promise.pipelines'))) {
+                $results[$index] = wait($promises);
+                $index++;
+                unset($promises);
+            }
+            state('promise.pipelines', null);
         }
 
         if (is_callable($process[0])) {

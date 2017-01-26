@@ -59,6 +59,16 @@ return [
             'headers' => [
                 'User-Agent' => 'Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1',
             ],
+            'download_path' => __DIR__ . '/downloads/yaochufa'
         ],
+    ],
+    'xr' => [
+        'index' => new \xianrou\xr('GET', ''),
+    ],
+    'gzt' => [
+        'index' => new \gzt\guangzhoutong('GET', 'http://gzt.unimip.cn/mobile/services/all.do?city=gzt'),
+        'options' => [
+            'download_path' => __DIR__ . '/downloads/gzt',
+        ]
     ]
 ];

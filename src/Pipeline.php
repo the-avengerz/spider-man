@@ -86,7 +86,7 @@ abstract class Pipeline
 
         $this->options = array_merge([
             'headers' => [
-                'User-Agent' => state('faker')->userAgent,
+                'USER-AGENT' => state('faker')->userAgent,
                 'CLIENT-IP' => state('faker')->ipv4,
                 'X-FORWARDED-FOR' => state('faker')->ipv4,
             ]
@@ -231,11 +231,27 @@ abstract class Pipeline
      */
     public function pipeline(Pipeline $pipeline, $index = 0)
     {
+        $pipeline->options = array_merge($this->options, $pipeline->options);
+
         $pipeline->index = $index;
 
         return promise(new Client(), $pipeline);
     }
 
+    /**
+     * @param Pipeline $pipeline
+     * @return array
+     */
+    public function wait(Pipeline $pipeline)
+    {
+        $pipeline->options = array_merge($this->options, $pipeline->options);
+
+        return wait([$pipeline(new Client())]);
+    }
+
+    /**
+     *
+     */
     public function __destruct()
     {
         $this->error = null;
