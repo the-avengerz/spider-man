@@ -15,7 +15,8 @@
     "require-dev": {
         "phpoffice/phpword": "v0.13.*",
         "phpoffice/phpexcel": "^1.8",
-        "propel/propel": "~2.0@dev"
+        "gabordemooij/redbean": "dev-master",
+        "catfan/Medoo": "^1.1"
     },
     "autoload": {
         "psr-4": {
