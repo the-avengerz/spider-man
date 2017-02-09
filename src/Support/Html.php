@@ -10,6 +10,7 @@
 namespace Support;
 
 
+use GuzzleHttp\Psr7\Uri;
 use PhpOffice\PhpWord\Element\AbstractContainer;
 use PhpOffice\PhpWord\Style\Image;
 
@@ -25,7 +26,7 @@ class Html
      * @param bool $fullHTML If it's a full HTML, no need to add 'body' tag
      * @return void
      */
-    public static function addHtml($element, $html, $fullHTML = false)
+    public static function addHtml($element, $html, $fullHTML = false, \DOMElement $dom = null)
     {
         /*
          * @todo parse $stylesheet for default styles.  Should result in an array based on id, class and element,
@@ -44,10 +45,13 @@ class Html
             $html = '<body>' . $html . '</body>';
         }
 
-        // Load DOM
-        $dom = new \DOMDocument();
-        $dom->preserveWhiteSpace = true;
-        $dom->loadXML($html);
+        if (null === $dom) {
+            // Load DOM
+            $dom = new \DOMDocument();
+            $dom->preserveWhiteSpace = true;
+            $dom->loadXML($html);
+        }
+
         $node = $dom->getElementsByTagName('body');
 
         self::parseNode($node->item(0), $element);
@@ -344,8 +348,16 @@ class Html
         $style=array();
         foreach ($node->attributes as $attribute) {
             switch ($attribute->name) {
+                case 'data-original':
+                    $uri = new Uri($attribute->value);
+                    $src = $uri->getScheme() . '://' . $uri->getHost() . $uri->getPath();
+                    $src = 'http://localhost/me/spider-man/downloads/yaochufa/images/' . pathinfo($src, PATHINFO_BASENAME);
+//                    echo str_repeat(' ', 4) . $src . PHP_EOL;
+                    break;
                 case 'src':
                     $src=$attribute->value;
+                    $src = 'http://localhost/me/spider-man/downloads/yaochufa/images/' . pathinfo($src, PATHINFO_BASENAME);
+//                    echo str_repeat(' ', 4) . $src . PHP_EOL;
                     break;
                 case 'width':
                     $width=$attribute->value;
