@@ -219,7 +219,7 @@ abstract class Pipeline
             ->requestAsync($this->method, (string)$this->uri, $this->options)
             ->then($this->success, $this->error);
 
-        unset($this);
+//        unset($this);
 
         return $promise;
     }
