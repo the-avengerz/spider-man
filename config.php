@@ -38,12 +38,6 @@ return [
             'download_path' => __DIR__ . '/downloads/zy'
         ],
     ],
-    'tj' => [
-        'index' => new \tj\tj('GET', 'http://112.124.40.205:55757/'),
-        'options' => [
-            'download_path' => __DIR__ . '/downloads/tj'
-        ],
-    ],
     'linghit' => [
         'index' => new \linghit\news('GET', 'http://m.linghit.com/'),
         'options' => [
