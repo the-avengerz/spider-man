@@ -7,26 +7,8 @@
  * @link      http://www.fast-d.cn/
  */
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Promise\PromiseInterface;
+use Avenger\State\Tying;
 use Psr\Http\Message\ResponseInterface;
-use State\Tying;
-use Symfony\Component\DomCrawler\Crawler;
-
-/**
- * @param Pipeline $pipeline
- * @param ResponseInterface $response
- * @return Crawler
- */
-function createCrawler(Pipeline $pipeline, ResponseInterface $response)
-{
-    $response->getBody()->rewind();
-    $content = $response->getBody()->getContents();
-    if ('<' !== substr($content, 0, 1)) {
-        $content = '';
-    }
-    return new Crawler($content, (string)$pipeline->uri);
-}
 
 /**
  * @param ResponseInterface $response
@@ -40,6 +22,7 @@ function transformResponseToJson(ResponseInterface $response, $assoc = true)
     if (json_last_error()) {
         return false;
     }
+
     return $json;
 }
 
@@ -80,21 +63,6 @@ function state($name, $value = null, $append = false)
     return true;
 }
 
-/**
- * @param Client $client
- * @param Pipeline $pipeline
- * @return PromiseInterface
- */
-function promise (Client $client, Pipeline $pipeline) {
-    $promise = $pipeline($client);
-    state('promise.pipelines', $promise, true);
-    return $promise;
-}
-
-/**
- * @param PromiseInterface[] $promise
- * @return array
- */
 function wait(array $promise)
 {
     return \GuzzleHttp\Promise\unwrap($promise);
@@ -112,4 +80,20 @@ function progressBarMaxStep($step)
     $bar->setProgress(($current + $step));
 
     $bar->setProgress($current);
+}
+
+/**
+ * @param $method
+ * @param $uri
+ */
+function progressBarStatus($method, $uri)
+{
+    state('uri', $uri);
+    state('method', $method);
+    state('progress.bar')->advance();
+}
+
+function faker()
+{
+    return state('faker');
 }

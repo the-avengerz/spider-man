@@ -1,5 +1,8 @@
 <?php
-use Behavior\Emit;
+
+namespace Avenger;
+
+use Avenger\Behavior\Emit;
 use Faker\Generator;
 use Faker\Provider\Internet;
 use Faker\Provider\UserAgent;
@@ -18,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class SpiderMan extends Application
 {
-    const VERSION = '0.1.0 (dev)';
+    const VERSION = '1.0.0 (dev)';
 
     const NAME = 'Peter Parker';
 
@@ -26,12 +29,13 @@ class SpiderMan extends Application
 
     /**
      * SpiderMan constructor.
+     * @param string $path
      */
-    public function __construct()
+    public function __construct($path = __DIR__)
     {
         parent::__construct(SpiderMan::NAME, SpiderMan::VERSION);
 
-        $this->add(new Emit(SpiderMan::BEHAVIOR));
+        $this->add(new Emit(SpiderMan::BEHAVIOR, $path));
 
         $this->setDefaultCommand(SpiderMan::BEHAVIOR);
     }
@@ -40,6 +44,7 @@ class SpiderMan extends Application
      * @param InputInterface|null $input
      * @param OutputInterface|null $output
      * @return int
+     * @throws Exception
      */
     public function run(InputInterface $input = null, OutputInterface $output = null)
     {
@@ -57,6 +62,7 @@ class SpiderMan extends Application
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int
+     * @throws Throwable
      */
     public function doRun(InputInterface $input, OutputInterface $output)
     {

@@ -20,10 +20,10 @@
     },
     "autoload": {
         "psr-4": {
-            "": "src"
+            "Avenger\\": "src"
         },
         "files": [
-            "src/Support/functions.php"
+            "helpers.php"
         ]
     },
     "autoload-dev": {

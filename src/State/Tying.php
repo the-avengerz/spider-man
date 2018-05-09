@@ -7,7 +7,7 @@
  * @link      http://www.fast-d.cn/
  */
 
-namespace State;
+namespace Avenger\State;
 
 
 /**

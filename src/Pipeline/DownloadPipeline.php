@@ -40,10 +40,11 @@ abstract class DownloadPipeline extends Pipeline
             'http' => [
                 'method' => "GET",
                 'timeout' => $timeout,//单位秒
+                'referer' => (string) $this->uri,
             ]
         ]));
 
-        $file = $config['download_path'] . $file;
+        $file = $config['download'] . $file;
 
         $this->targetDirectory(dirname($file));
 

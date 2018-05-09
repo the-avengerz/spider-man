@@ -8,6 +8,8 @@
  * @link      http://www.fast-d.cn/
  */
 
+use Avenger\SpiderMan;
+
 ini_set('memory_limit', '1024M');
 set_time_limit(0);
 date_default_timezone_set('PRC');
@@ -32,8 +34,12 @@ if (!defined('COMPOSER_INSTALL')) {
     );
 }
 
-include COMPOSER_INSTALL;
+$composer = include COMPOSER_INSTALL;
 
-$application = new SpiderMan();
+$paths = $composer->getFallbackDirsPsr4();
+
+$defaultPath = array_pop($paths);
+
+$application = new SpiderMan($defaultPath);
 
 $application->run();

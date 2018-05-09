@@ -1,4 +1,7 @@
 <?php
+
+namespace Avenger;
+
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -13,20 +16,14 @@ use Symfony\Component\DomCrawler\Crawler;
  * @link      https://www.github.com/janhuang
  * @link      http://www.fast-d.cn/
  */
-abstract class Pipeline
+abstract class Pipeline implements SpiderInterface
 {
     const PIPELINE_SUCCESS = 'process';
-    const PIPELINE_ERROR = 'error';
 
     /**
      * @var Uri
      */
-    public $uri;
-
-    /**
-     * @var string
-     */
-    public $method;
+    public $uris = [];
 
     /**
      * @var array
@@ -34,122 +31,38 @@ abstract class Pipeline
     public $options = [];
 
     /**
-     * @var callable
-     */
-    public $success;
-
-    /**
-     * @var callable
-     */
-    public $error;
-
-    /**
-     * @var Pipeline[]
-     */
-    public $pipelines = [];
-
-    /**
-     * @var int
-     */
-    public $index = 0;
-
-    /**
-     * @var Crawler
-     */
-    public $node;
-
-    /**
-     * @var ResponseInterface
-     */
-    public $response;
-
-    /**
      * @var Client
      */
-    public $client;
+    protected $client;
 
     /**
      * Pipeline constructor.
-     * @param $method
-     * @param $uri
-     * @param array $options
+     * @param Client $client
      */
-    public function __construct($method = null, $uri = null, array $options = [])
+    public function __construct(Client $client)
     {
-        $this->method = $method;
+        $this->client = $client;
 
-        if (!($uri instanceof Uri)) {
-            $uri = new Uri($uri);
-        }
-
-        $this->uri = $uri;
-
-        $this->options = array_merge([
+        $this->options = [
             'headers' => [
-                'USER-AGENT' => state('faker')->userAgent,
-                'CLIENT-IP' => state('faker')->ipv4,
-                'X-FORWARDED-FOR' => state('faker')->ipv4,
-            ]
-        ], $options);
-
-        $this->success = function (ResponseInterface $response) {
-            $crawler = createCrawler($this, $response);
-            $this->node = $crawler;
-            $this->response = $response;
-            state('uri', (string)$this->uri);
-            state('method', (string)$this->method);
-            state('progress.bar')->advance();
-            return call_user_func_array([$this, Pipeline::PIPELINE_SUCCESS], [$crawler, $response]);
-        };
-
-        $this->error = function (RequestException $requestException) {
-            state('uri', (string)$this->uri);
-            state('method', (string)$this->method);
-            state('progress.bar')->advance();
-            return call_user_func_array([$this, Pipeline::PIPELINE_ERROR], [$requestException]);
-        };
+                'USER-AGENT' => faker()->userAgent,
+                'CLIENT-IP' => faker()->ipv4,
+                'X-FORWARDED-FOR' => faker()->ipv4,
+            ],
+        ];
     }
 
     /**
-     * @return Uri
-     */
-    public function getUri()
-    {
-        return $this->uri;
-    }
-
-    /**
-     * @param mixed $uri
-     * @return $this
-     */
-    public function setUri($uri)
-    {
-        if (!($uri instanceof Uri)) {
-            $uri = new Uri($uri);
-        }
-
-        $this->uri = $uri;
-
-        return $this;
-    }
-
-    /**
+     * @param $index
      * @return string
      */
-    public function getMethod()
+    public function getUri($index = 0)
     {
-        return $this->method;
-    }
+        if ( ! isset($this->uris[$index])) {
+            throw new \InvalidArgumentException(sprintf('Url index: %s is undefined.', $index));
+        }
 
-    /**
-     * @param string $method
-     * @return $this
-     */
-    public function setMethod($method)
-    {
-        $this->method = $method;
-
-        return $this;
+        return $this->uris[$index];
     }
 
     /**
@@ -172,107 +85,73 @@ abstract class Pipeline
     }
 
     /**
-     * @return callable
-     */
-    public function getSuccess()
-    {
-        return $this->success;
-    }
-
-    /**
-     * @param callable $success
-     * @return $this
-     */
-    public function setSuccess(callable $success)
-    {
-        $this->success = $success;
-
-        return $this;
-    }
-
-    /**
-     * @return callable
-     */
-    public function getError()
-    {
-        return $this->error;
-    }
-
-    /**
-     * @param callable $error
-     * @return $this
-     */
-    public function setError(callable $error)
-    {
-        $this->error = $error;
-
-        return $this;
-    }
-
-    /**
-     * @param Client $client
+     * @param $method
+     * @param $uri
      * @return PromiseInterface
      */
-    public function __invoke(Client $client)
+    protected function promise($method, $uri)
     {
-        $promise = $client
-            ->requestAsync($this->method, (string)$this->uri, $this->options)
-            ->then($this->success, $this->error);
+        $that = $this;
+        return $this->client
+            ->requestAsync($method, $uri, $this->options)
+            ->then(
+                function (ResponseInterface $response) use ($method, $uri, $that) {
+                    $content = (string) $response->getBody();
 
-//        unset($this);
+                    if ('<' !== substr($content, 0, 1)) { // html
+                        $content = null;
+                    }
+                    $crawler = new Crawler($content, $uri);
 
-        return $promise;
+                    progressBarStatus($method, $uri);
+
+                    return call_user_func_array([$that, Pipeline::PIPELINE_SUCCESS], [$crawler, $response]);
+                },
+                function (RequestException $requestException) use ($method, $uri, $that) {
+                    if ($that instanceof SpiderManErrorHandlerInterface) {
+                        progressBarStatus($method, $uri);
+
+                        return call_user_func_array([$that, Pipeline::PIPELINE_ERROR], [$requestException]);
+                    }
+                    throw $requestException;
+                });
     }
 
     /**
-     * @param Pipeline $pipeline
-     * @param $index;
-     * @return PromiseInterface
+     * @return PromiseInterface[]
      */
-    public function pipeline(Pipeline $pipeline, $index = 0)
+    public function __invoke()
     {
-        $pipeline->options = array_merge($this->options, $pipeline->options);
+        if (empty($this->uris)) {
+            throw new \RuntimeException(sprintf('Uris cannot be not.'));
+        }
 
-        $pipeline->index = $index;
+        $promises = [];
+        foreach ($this->uris as $uri) {
+            $method = 'GET';
+            if (false !== stripos($uri, ' ')) {
+                list($method, $uri) = explode(' ', $uri);
+            }
+            $promises[] = $this->promise($method, $uri);
+        }
 
-        return promise(new Client(), $pipeline);
+        return $promises;
     }
 
     /**
-     * @param Pipeline $pipeline
+     * @param $method
+     * @param $uri
      * @return array
      */
-    public function wait(Pipeline $pipeline)
+    public function pipeline($method, $uri)
     {
-        $pipeline->options = array_merge($this->options, $pipeline->options);
+        $pipeline = clone $this;
 
-        return wait([$pipeline(new Client())]);
+        return wait([$pipeline->promise($method, $uri)]);
     }
 
-    /**
-     *
-     */
     public function __destruct()
     {
-        $this->error = null;
-        $this->success = null;
-        $this->uri = null;
-        $this->pipelines = [];
-        $this->method = null;
-
         gc_collect_cycles();
     }
-
-    /**
-     * @param Crawler $crawler
-     * @param ResponseInterface $response
-     * @return mixed
-     */
-    abstract public function process(Crawler $crawler = null, ResponseInterface $response = null);
-
-    /**
-     * @param RequestException $exception
-     * @return mixed
-     */
-    abstract public function error(RequestException $exception);
 }

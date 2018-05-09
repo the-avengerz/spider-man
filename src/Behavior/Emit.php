@@ -7,12 +7,11 @@
  * @link      http://www.fast-d.cn/
  */
 
-namespace Behavior;
-
+namespace Avenger\Behavior;
 
 use GuzzleHttp\Client;
 use LogicException;
-use Pipeline;
+use Avenger\Pipeline;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
@@ -61,29 +60,13 @@ class Emit extends Command
 
         $pipeline = $this->createPipeline($pipeline);
 
-        $progress = $this->initProgressBar($pipeline);
+//        $progress = $this->initProgressBar($pipeline);
 
-        $progress->start(1);
+//        $progress->start(1);
 
-        $process = wait([$pipeline($this->httpClient)]);
+        wait($pipeline());
 
-        $results = [];
-        $index = 0;
-
-        while (!empty(state('promise.pipelines'))) {
-            if (is_array($promises = state('promise.pipelines'))) {
-                $results[$index] = wait($promises);
-                $index++;
-                unset($promises);
-            }
-            state('promise.pipelines', null);
-        }
-
-        if (is_callable($process[0])) {
-            call_user_func($process[0], $results);
-        }
-
-        $progress->finish();
+//        $progress->finish();
 
         return 0;
     }
@@ -94,8 +77,8 @@ class Emit extends Command
      */
     protected function statePipeline(Pipeline $pipeline)
     {
-        state('method', $pipeline->method);
-        state('uri', (string)$pipeline->uri);
+//        state('method', $pipeline->method);
+//        state('uri', (string)$pipeline->uri);
 
         return $this;
     }
@@ -113,7 +96,7 @@ class Emit extends Command
         ProgressBar::setPlaceholderFormatterDefinition('method', function () { return state('method'); });
         ProgressBar::setPlaceholderFormatterDefinition('url', function () { return state('uri'); });
 
-        $progress->setFormat("[%method%] %url%\n%current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s%");
+        $progress->setFormat("<info>[%method%]</info> <comment>%url%</comment>\n%current%/%max% [%bar%] %percent:3s%%\n%elapsed:6s%/%estimated:-6s% %memory:6s%");
 
         return $progress;
     }
@@ -132,25 +115,18 @@ class Emit extends Command
 
         $config = include_once $config;
 
-        if (!isset($config[$name])) {
-            throw new LogicException(sprintf('Spider pipeline %s is undefined.', $name));
+        if (isset($config['download']) && !file_exists($config['download'])) {
+            mkdir($config['download'], 0755, true);
         }
-
-        $config = $config[$name];
 
         state('config', $config);
 
-        $pipeline = isset($config['index']) ? $config['index'] : null;
+        $pipeline = str_replace('/', '\\', ucwords($name, '/'));
+        $pipeline = new $pipeline($this->httpClient);
 
-        if (is_string($pipeline)) {
-            $pipeline = new $pipeline($config['method'], $config['url']);
-
-            if (!($pipeline instanceof Pipeline)) {
-                throw new LogicException(sprintf('Spider pipeline index must be instance %s', Pipeline::class));
-            }
+        if (!($pipeline instanceof Pipeline)) {
+            throw new LogicException(sprintf('Spider pipeline index must be instance %s', Pipeline::class));
         }
-
-        $pipeline->options = isset($config['options']) ? $config['options'] : [];
 
         return $pipeline;
     }
