@@ -15,7 +15,9 @@ use Avenger\Pipeline;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use JonnyW\PhantomJs\Client as PhantomJs;
 
 /**
  * Class Emit
@@ -26,19 +28,12 @@ class Emit extends Command
     const SPIDER_WEB = 'pipeline';
 
     /**
-     * @var Client
-     */
-    protected $httpClient;
-
-    /**
      * Emit constructor.
      * @param null $name
      */
     public function __construct($name = null)
     {
         parent::__construct($name);
-
-        $this->httpClient = new Client();
     }
 
     /**
@@ -47,6 +42,7 @@ class Emit extends Command
     public function configure()
     {
         $this->addArgument(Emit::SPIDER_WEB);
+        $this->addOption('phantom', '-p', InputOption::VALUE_NONE, 'Enable phantom js?');
     }
 
     /**
@@ -58,15 +54,18 @@ class Emit extends Command
     {
         $pipeline = $input->getArgument(Emit::SPIDER_WEB);
 
-        $pipeline = $this->createPipeline($pipeline);
+        // Enable phantom js
+        $client = $input->hasParameterOption(['--phantom', '-p']) ? PhantomJs::getInstance() : new Client();
 
-//        $progress = $this->initProgressBar($pipeline);
+        $pipeline = $this->createPipeline($pipeline, $client);
 
-//        $progress->start(1);
+        $progress = $this->initProgressBar($pipeline);
+
+        $progress->start(1);
 
         wait($pipeline());
 
-//        $progress->finish();
+        $progress->finish();
 
         return 0;
     }
@@ -105,7 +104,7 @@ class Emit extends Command
      * @param $name
      * @return Pipeline
      */
-    public function createPipeline($name)
+    public function createPipeline($name, $client)
     {
         $config = getcwd() . '/config.php';
 
@@ -115,14 +114,16 @@ class Emit extends Command
 
         $config = include_once $config;
 
-        if (isset($config['download']) && !file_exists($config['download'])) {
-            mkdir($config['download'], 0755, true);
+        $download = $config['download'].'/'.dirname($name);
+
+        if (!file_exists($download)) {
+            mkdir($download, 0755, true);
         }
 
         state('config', $config);
 
-        $pipeline = str_replace('/', '\\', ucwords($name, '/'));
-        $pipeline = new $pipeline($this->httpClient);
+        $pipeline = str_replace('/', '\\', $name);
+        $pipeline = new $pipeline($client);
 
         if (!($pipeline instanceof Pipeline)) {
             throw new LogicException(sprintf('Spider pipeline index must be instance %s', Pipeline::class));

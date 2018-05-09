@@ -2,10 +2,11 @@
 
 namespace Avenger;
 
-use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Uri;
+use JonnyW\PhantomJs\Client;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -30,16 +31,13 @@ abstract class Pipeline implements SpiderInterface
      */
     protected $options = [];
 
-    /**
-     * @var Client
-     */
     protected $client;
 
     /**
      * Pipeline constructor.
-     * @param Client $client
+     * @param $client
      */
-    public function __construct(Client $client)
+    public function __construct($client)
     {
         $this->client = $client;
 
@@ -70,7 +68,9 @@ abstract class Pipeline implements SpiderInterface
     /**
      * @return void
      */
-    public function configure(){}
+    public function configure()
+    {
+    }
 
     /**
      * @return array
@@ -99,29 +99,55 @@ abstract class Pipeline implements SpiderInterface
     protected function promise($method, $uri)
     {
         $that = $this;
-        return $this->client
-            ->requestAsync($method, $uri, $this->options)
-            ->then(
-                function (ResponseInterface $response) use ($method, $uri, $that) {
-                    $content = (string) $response->getBody();
+        if ($this->client instanceof \GuzzleHttp\Client) {
+            return $this->client
+                ->requestAsync($method, $uri, $this->options)
+                ->then(
+                    function (ResponseInterface $response) use ($method, $uri, $that) {
+                        $content = (string)$response->getBody();
 
-                    if ('<' !== substr($content, 0, 1)) { // html
-                        $content = null;
-                    }
-                    $crawler = new Crawler($content, $uri);
+                        if ('<' !== substr($content, 0, 1)) { // html
+                            $content = null;
+                        }
+                        $crawler = new Crawler($content, $uri);
 
-                    progressBarStatus($method, $uri);
-
-                    return call_user_func_array([$that, $that->processCallback], [$crawler, $response]);
-                },
-                function (RequestException $requestException) use ($method, $uri, $that) {
-                    if ($that instanceof SpiderManErrorHandlerInterface) {
                         progressBarStatus($method, $uri);
 
-                        return call_user_func_array([$that, SpiderManErrorHandlerInterface::PIPELINE_ERROR], [$requestException]);
-                    }
-                    throw $requestException;
-                });
+                        return call_user_func_array([$that, $that->processCallback], [$crawler, $response]);
+                    },
+                    function (RequestException $requestException) use ($method, $uri, $that) {
+                        if ($that instanceof SpiderManErrorHandlerInterface) {
+                            progressBarStatus($method, $uri);
+
+                            return call_user_func_array([$that, SpiderManErrorHandlerInterface::PIPELINE_ERROR],
+                                [$requestException]);
+                        }
+                        throw $requestException;
+                    });
+        } elseif ($this->client instanceof Client) {
+            $factory = $this->client->getMessageFactory();
+            $request = $factory->createRequest($uri, $method);
+            $response = $factory->createResponse();
+            progressBarStatus($method, $uri);
+            $this->client->send($request, $response);
+            $content = $response->getContent();
+            if ('<' !== substr($content, 0, 1)) { // html
+                $content = null;
+            }
+            $crawler = new Crawler($content, $uri);
+
+            return call_user_func_array(
+                [$that, $that->processCallback],
+                [
+                    $crawler,
+                    new Response(
+                        $response->getStatus(),
+                        [],
+                        $response->getContent()
+                    ),
+                ]
+            );
+        }
     }
 
     /**
@@ -131,6 +157,7 @@ abstract class Pipeline implements SpiderInterface
     {
         if (empty($this->uris)) {
             call_user_func_array([$this, $this->processCallback], [null, null]);
+
             return [];
         }
 

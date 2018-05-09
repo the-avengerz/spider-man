@@ -8,9 +8,9 @@
     ],
     "require": {
         "fabpot/goutte": "~3.2",
-        "symfony/console": "~3.2",
+        "symfony/console": "^4",
         "fzaninotto/faker": "~1.6.0",
-        "jonnyw/php-phantomjs": "~4.5.0"
+        "jonnyw/php-phantomjs": "^4"
     },
     "require-dev": {
         "phpoffice/phpword": "v0.13.*",

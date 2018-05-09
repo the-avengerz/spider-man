@@ -65,7 +65,11 @@ function state($name, $value = null, $append = false)
 
 function wait(array $promise)
 {
-    return \GuzzleHttp\Promise\unwrap($promise);
+    if ($promise[0] instanceof \GuzzleHttp\Promise\PromiseInterface) {
+        return \GuzzleHttp\Promise\unwrap($promise);
+    }
+
+    return $promise;
 }
 
 /**
