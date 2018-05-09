@@ -29,13 +29,12 @@ class SpiderMan extends Application
 
     /**
      * SpiderMan constructor.
-     * @param string $path
      */
-    public function __construct($path = __DIR__)
+    public function __construct()
     {
         parent::__construct(SpiderMan::NAME, SpiderMan::VERSION);
 
-        $this->add(new Emit(SpiderMan::BEHAVIOR, $path));
+        $this->add(new Emit(SpiderMan::BEHAVIOR));
 
         $this->setDefaultCommand(SpiderMan::BEHAVIOR);
     }
@@ -44,7 +43,7 @@ class SpiderMan extends Application
      * @param InputInterface|null $input
      * @param OutputInterface|null $output
      * @return int
-     * @throws Exception
+     * @throws \Exception
      */
     public function run(InputInterface $input = null, OutputInterface $output = null)
     {
@@ -62,7 +61,7 @@ class SpiderMan extends Application
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int
-     * @throws Throwable
+     * @throws \Throwable
      */
     public function doRun(InputInterface $input, OutputInterface $output)
     {

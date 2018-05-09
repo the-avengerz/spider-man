@@ -34,12 +34,8 @@ if (!defined('COMPOSER_INSTALL')) {
     );
 }
 
-$composer = include COMPOSER_INSTALL;
+include COMPOSER_INSTALL;
 
-$paths = $composer->getFallbackDirsPsr4();
-
-$defaultPath = array_pop($paths);
-
-$application = new SpiderMan($defaultPath);
+$application = new SpiderMan();
 
 $application->run();

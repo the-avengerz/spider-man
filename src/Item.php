@@ -18,12 +18,24 @@ use Symfony\Component\DomCrawler\Crawler;
  */
 abstract class Item extends Pipeline
 {
-    const PIPELINE_SUCCESS = 'item';
-
     /**
      * @param Crawler|null $crawler
      * @param ResponseInterface|null $response
      * @return mixed
      */
     abstract public function parse(Crawler $crawler = null, ResponseInterface $response = null);
+
+    /**
+     * @param $method
+     * @param $uri
+     * @return array
+     */
+    public function parseItem($method, $uri)
+    {
+        $this->processCallback = 'parse';
+
+        $pipeline = clone $this;
+
+        return wait([$pipeline->promise($method, $uri)]);
+    }
 }

@@ -18,17 +18,17 @@ use Symfony\Component\DomCrawler\Crawler;
  */
 abstract class Pipeline implements SpiderInterface
 {
-    const PIPELINE_SUCCESS = 'process';
+    protected $processCallback = 'process';
 
     /**
      * @var Uri
      */
-    public $uris = [];
+    protected $uris = [];
 
     /**
      * @var array
      */
-    public $options = [];
+    protected $options = [];
 
     /**
      * @var Client
@@ -50,6 +50,8 @@ abstract class Pipeline implements SpiderInterface
                 'X-FORWARDED-FOR' => faker()->ipv4,
             ],
         ];
+
+        $this->configure();
     }
 
     /**
@@ -64,6 +66,11 @@ abstract class Pipeline implements SpiderInterface
 
         return $this->uris[$index];
     }
+
+    /**
+     * @return void
+     */
+    public function configure(){}
 
     /**
      * @return array
@@ -105,13 +112,13 @@ abstract class Pipeline implements SpiderInterface
 
                     progressBarStatus($method, $uri);
 
-                    return call_user_func_array([$that, Pipeline::PIPELINE_SUCCESS], [$crawler, $response]);
+                    return call_user_func_array([$that, $that->processCallback], [$crawler, $response]);
                 },
                 function (RequestException $requestException) use ($method, $uri, $that) {
                     if ($that instanceof SpiderManErrorHandlerInterface) {
                         progressBarStatus($method, $uri);
 
-                        return call_user_func_array([$that, Pipeline::PIPELINE_ERROR], [$requestException]);
+                        return call_user_func_array([$that, SpiderManErrorHandlerInterface::PIPELINE_ERROR], [$requestException]);
                     }
                     throw $requestException;
                 });
@@ -123,7 +130,8 @@ abstract class Pipeline implements SpiderInterface
     public function __invoke()
     {
         if (empty($this->uris)) {
-            throw new \RuntimeException(sprintf('Uris cannot be not.'));
+            call_user_func_array([$this, $this->processCallback], [null, null]);
+            return [];
         }
 
         $promises = [];
@@ -139,15 +147,16 @@ abstract class Pipeline implements SpiderInterface
     }
 
     /**
-     * @param $method
-     * @param $uri
+     * @param $pipeline
      * @return array
      */
-    public function pipeline($method, $uri)
+    public function pipeline($pipeline)
     {
-        $pipeline = clone $this;
+        if (is_string($pipeline)) {
+            $pipeline = new $pipeline($this->client);
+        }
 
-        return wait([$pipeline->promise($method, $uri)]);
+        return wait($pipeline());
     }
 
     public function __destruct()

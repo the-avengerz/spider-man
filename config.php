@@ -40,6 +40,12 @@ return [
 //            'download_path' => __DIR__ . '/downloads/zy'
 //        ],
 //    ],
+//    'linghit' => [
+//        'index' => new \linghit\news('GET', 'http://m.linghit.com/'),
+//        'options' => [
+//            'download_path' => __DIR__ . '/downloads/linghit'
+//        ],
+//    ],
 //    'huaban' => [
 //        'index' => new \huaban\huaban('GET', 'http://huaban.com/favorite/beauty/'),
 //        'options' => [
@@ -51,8 +57,5 @@ return [
 //        'options' => [
 //            'download_path' => __DIR__ . '/downloads/weibo/daye/'
 //        ],
-//    ],
-//    'mm' => [
-//        'index' => new \girl\mm('GET', 'http://www.mzitu.com/'),
 //    ]
 ];
