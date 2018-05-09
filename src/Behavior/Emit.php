@@ -48,7 +48,9 @@ class Emit extends Command
     /**
      * @param InputInterface $input
      * @param OutputInterface $output
-     * @return int
+     * @return int|null
+     * @throws \Exception
+     * @throws \Throwable
      */
     public function execute(InputInterface $input, OutputInterface $output)
     {

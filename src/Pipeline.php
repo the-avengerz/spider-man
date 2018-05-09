@@ -105,20 +105,16 @@ abstract class Pipeline implements SpiderInterface
                 ->then(
                     function (ResponseInterface $response) use ($method, $uri, $that) {
                         $content = (string)$response->getBody();
-
                         if ('<' !== substr($content, 0, 1)) { // html
                             $content = null;
                         }
                         $crawler = new Crawler($content, $uri);
-
                         progressBarStatus($method, $uri);
-
                         return call_user_func_array([$that, $that->processCallback], [$crawler, $response]);
                     },
                     function (RequestException $requestException) use ($method, $uri, $that) {
                         if ($that instanceof SpiderManErrorHandlerInterface) {
                             progressBarStatus($method, $uri);
-
                             return call_user_func_array([$that, SpiderManErrorHandlerInterface::PIPELINE_ERROR],
                                 [$requestException]);
                         }
@@ -176,6 +172,8 @@ abstract class Pipeline implements SpiderInterface
     /**
      * @param $pipeline
      * @return array
+     * @throws \Exception
+     * @throws \Throwable
      */
     public function pipeline($pipeline)
     {

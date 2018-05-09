@@ -63,6 +63,12 @@ function state($name, $value = null, $append = false)
     return true;
 }
 
+/**
+ * @param array $promise
+ * @return array
+ * @throws Exception
+ * @throws Throwable
+ */
 function wait(array $promise)
 {
     if ($promise[0] instanceof \GuzzleHttp\Promise\PromiseInterface) {
