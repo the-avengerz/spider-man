@@ -111,10 +111,12 @@ class Emit extends Command
         $config = getcwd() . '/config.php';
 
         if (!file_exists($config)) {
-            throw new LogicException(sprintf('Unable find (config.php) in %s', $config));
+            $config = [
+                'download' => getcwd().'/downloads',
+            ];
+        } else {
+            $config = include_once $config;
         }
-
-        $config = include_once $config;
 
         $download = $config['download'].'/'.dirname($name);
 

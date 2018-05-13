@@ -29,6 +29,8 @@ abstract class Item extends Pipeline
      * @param $method
      * @param $uri
      * @return array
+     * @throws \Exception
+     * @throws \Throwable
      */
     public function parseItem($method, $uri)
     {
